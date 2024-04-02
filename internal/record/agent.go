@@ -1,6 +1,9 @@
 package record
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/bluenviron/mediamtx/internal/conf"
@@ -88,5 +91,53 @@ func (w *Agent) run() {
 			agent: w,
 		}
 		w.currentInstance.initialize()
+	}
+}
+
+//custom onSegmentComplete
+
+func (w *Agent) CustomOnSegmentComplete(path string) {
+	dir := filepath.Dir(path)
+	subpath := filepath.Base(filepath.Dir(path)) // Retrieve the second-to-last element
+	filename := filepath.Base(path)
+
+	filePath := dir + "/" + subpath + ".m3u8"
+
+	var file *os.File
+	var err error
+
+	// Check if the file exists
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		// If the file does not exist, create it
+		file, err = os.Create(filePath)
+		if err != nil {
+			w.Log(logger.Error, "Error creating .m3u8 file: %s", filePath)
+			return
+		}
+		defer file.Close()
+
+		// Write initial content to the file
+		initialContent := "#EXTM3U" + "\n" + "#EXT-X-VERSION:3" + "\n"
+		_, err = file.WriteString(initialContent)
+		if err != nil {
+			w.Log(logger.Error, "Error writing initial content to file: %s", filePath)
+			return
+		}
+	} else {
+		// If the file exists, open it in append mode
+		file, err = os.OpenFile(filePath, os.O_WRONLY|os.O_APPEND, 0644)
+		if err != nil {
+			w.Log(logger.Error, "Error opening file: %s", filePath)
+			return
+		}
+		defer file.Close()
+	}
+
+	// Write content to the file
+	content := "#EXTINF:" + w.SegmentDuration.String() + "," + "\n" + filename + "\n"
+	_, err = file.WriteString(content)
+	if err != nil {
+		fmt.Println("Error writing to file:", err)
+		return
 	}
 }

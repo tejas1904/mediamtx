@@ -35,6 +35,7 @@ func (s *formatMPEGTSSegment) close() error {
 
 		if err2 == nil {
 			s.f.a.agent.OnSegmentComplete(s.path)
+			s.f.a.agent.CustomOnSegmentComplete(s.path)
 		}
 	}
 
