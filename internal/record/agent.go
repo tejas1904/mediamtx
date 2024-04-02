@@ -101,7 +101,7 @@ func (w *Agent) CustomOnSegmentComplete(path string) {
 	subpath := filepath.Base(filepath.Dir(path)) // Retrieve the second-to-last element
 	filename := filepath.Base(path)
 
-	filePath := dir + "/" + subpath + ".m3u8"
+	filePath := dir + "/" + subpath + "master.m3u8"
 
 	var file *os.File
 	var err error
