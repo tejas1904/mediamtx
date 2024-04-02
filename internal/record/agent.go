@@ -1,7 +1,6 @@
 package record
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -98,10 +97,10 @@ func (w *Agent) run() {
 
 func (w *Agent) CustomOnSegmentComplete(path string) {
 	dir := filepath.Dir(path)
-	subpath := filepath.Base(filepath.Dir(path)) // Retrieve the second-to-last element
+	//subpath := filepath.Base(filepath.Dir(path)) // Retrieve the second-to-last element (folder name)
 	filename := filepath.Base(path)
 
-	filePath := dir + "/" + subpath + "master.m3u8"
+	filePath := dir + "/" + "master" + ".m3u8"
 
 	var file *os.File
 	var err error
@@ -137,7 +136,7 @@ func (w *Agent) CustomOnSegmentComplete(path string) {
 	content := "#EXTINF:" + w.SegmentDuration.String() + "," + "\n" + filename + "\n"
 	_, err = file.WriteString(content)
 	if err != nil {
-		fmt.Println("Error writing to file:", err)
+		w.Log(logger.Error, "Error writing to file: %s", filePath)
 		return
 	}
 }
