@@ -621,4 +621,13 @@ paths:
 
   # Settings under path "all_others" are applied to all paths that
   # do not match another entry.
+  client1/group1/tapo2:
+    name: "client1/group1/tapo2"
+    source: "publisher"
+    record:  yes
+    playback: yes
+    recordPath: "./recordings/%path/%Y-%m-%d/%H-%M-%S"
+    recordFormat: "mpegts"
+    recordPartDuration: "100ms"
+    recordSegmentDuration: "5s"  
   all_others:
