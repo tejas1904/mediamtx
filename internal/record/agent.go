@@ -29,10 +29,15 @@ type Agent struct {
 
 	terminate chan struct{}
 	done      chan struct{}
+
+	doesM3u8Exist  bool
+	isDiscontinous bool
 }
 
 // Initialize initializes Agent.
 func (w *Agent) Initialize() {
+	//by defalut a segemnt is discontinous
+	w.isDiscontinous = true
 	if w.OnSegmentCreate == nil {
 		w.OnSegmentCreate = func(string) {
 		}
@@ -108,9 +113,10 @@ func (w *Agent) CustomOnSegmentComplete(path string) {
 	// Check if the file exists
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		// If the file does not exist, create it
+		w.isDiscontinous = false
 		file, err = os.Create(filePath)
 		if err != nil {
-			w.Log(logger.Error, "Error creating .m3u8 file: %s", filePath)
+			w.Log(logger.Error, "Error creating .m3u8 file: %s", path)
 			return
 		}
 		defer file.Close()
@@ -119,24 +125,37 @@ func (w *Agent) CustomOnSegmentComplete(path string) {
 		initialContent := "#EXTM3U" + "\n" + "#EXT-X-VERSION:3" + "\n"
 		_, err = file.WriteString(initialContent)
 		if err != nil {
-			w.Log(logger.Error, "Error writing initial content to file: %s", filePath)
+			w.Log(logger.Error, "Error writing initial content to .m3u8 file: %s", path)
 			return
 		}
 	} else {
 		// If the file exists, open it in append mode
+		w.doesM3u8Exist = true
 		file, err = os.OpenFile(filePath, os.O_WRONLY|os.O_APPEND, 0644)
 		if err != nil {
-			w.Log(logger.Error, "Error opening file: %s", filePath)
+			w.Log(logger.Error, "Error opening .m3u8 file: %s", path)
 			return
 		}
 		defer file.Close()
+	}
+
+	if w.isDiscontinous && w.doesM3u8Exist {
+		w.Log(logger.Error, " discontinous - %b m3u8exist - %b ", w.isDiscontinous, w.doesM3u8Exist)
+		// Write discontinuity tag
+		_, err = file.WriteString("#EXT-X-DISCONTINUITY\n")
+		if err != nil {
+			w.Log(logger.Error, "Error writing discontinuity tag to file: %s", path)
+			return
+		}
+
+		w.isDiscontinous = false
 	}
 
 	// Write content to the file
 	content := "#EXTINF:" + w.SegmentDuration.String() + "," + "\n" + filename + "\n"
 	_, err = file.WriteString(content)
 	if err != nil {
-		w.Log(logger.Error, "Error writing to file: %s", filePath)
+		w.Log(logger.Error, "Error writing to file: %s", path)
 		return
 	}
 }
